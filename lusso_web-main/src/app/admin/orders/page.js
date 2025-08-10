@@ -24,6 +24,7 @@ export default function OrderList() {
   const fetchOrders = async () => {
     try {
       const res = await getOrders();
+      console.log("API getOrders response:", res.data); // <-- debug: xem cấu trúc trả về
       setOrders(res.data);
     } catch (err) {
       console.error("Lỗi lấy danh sách đơn hàng:", err);
@@ -43,9 +44,11 @@ export default function OrderList() {
   const handleStatusChange = async (id, status) => {
     try {
       await updateOrderStatus(id, status);
-      fetchOrders();
+      // cập nhật local để UI phản hồi nhanh, không cần fetch lại ngay
+      setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, status } : o)));
     } catch (err) {
       console.error("Lỗi cập nhật trạng thái:", err);
+      // nếu cần, fallback: fetchOrders();
     }
   };
 
@@ -73,53 +76,61 @@ export default function OrderList() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.map((order) => (
-              <TableRow key={order._id}>
-                <TableCell>{order._id.slice(-6)}</TableCell>
-                <TableCell>{order.customerName}</TableCell>
-                <TableCell>{order.customerEmail}</TableCell>
-                <TableCell align="right">
-                  {order.totalAmount.toLocaleString()}₫
-                </TableCell>
-                <TableCell>
-                  <Select
-                    size="small"
-                    value={order.status}
-                    onChange={(e) =>
-                      handleStatusChange(order._id, e.target.value)
-                    }
-                  >
-                    <MenuItem value="pending">Chờ xác nhận</MenuItem>
-                    <MenuItem value="processing">Đang xử lý</MenuItem>
-                    <MenuItem value="shipped">
-                      Đã giao cho đơn vị vận chuyển
-                    </MenuItem>
-                    <MenuItem value="delivered">Đã giao hàng</MenuItem>
-                    <MenuItem value="canceled">Đã huỷ</MenuItem>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    size="small"
-                    onClick={() => handleDelete(order._id)}
-                  >
-                    Xoá
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    component={Link}
-                    href={`/admin/orders/${order._id}`}
-                    size="small"
-                  >
-                    Xem
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {orders.map((order) => {
+              const customerName =
+                order.customerInfo?.name || order.user?.fullName || "—";
+              const customerEmail =
+                order.customerInfo?.email || order.user?.email || "—";
+              const amount = Number(order.totalAmount ?? 0);
+
+              return (
+                <TableRow key={order._id}>
+                  <TableCell>{order._id.slice(-6)}</TableCell>
+                  <TableCell>{customerName}</TableCell>
+                  <TableCell>{customerEmail}</TableCell>
+                  <TableCell align="right">
+                    {amount.toLocaleString("vi-VN")}₫
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      size="small"
+                      value={order.status}
+                      onChange={(e) =>
+                        handleStatusChange(order._id, e.target.value)
+                      }
+                    >
+                      <MenuItem value="pending">Chờ xác nhận</MenuItem>
+                      <MenuItem value="processing">Đang xử lý</MenuItem>
+                      <MenuItem value="shipped">
+                        Đã giao cho đơn vị vận chuyển
+                      </MenuItem>
+                      <MenuItem value="delivered">Đã giao hàng</MenuItem>
+                      <MenuItem value="canceled">Đã huỷ</MenuItem>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      size="small"
+                      onClick={() => handleDelete(order._id)}
+                    >
+                      Xoá
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      component={Link}
+                      href={`/admin/orders/${order._id}`}
+                      size="small"
+                    >
+                      Xem
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

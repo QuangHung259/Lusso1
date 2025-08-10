@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/context/AuthContext"; // ✅ Chỉ dùng AuthContext
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
@@ -34,7 +34,7 @@ const navItems = [
 export default function Navbar() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const { cartCount } = useCart();
-  const { user, logout, isAuthenticated } = useAuth(); // ✅ Lấy từ AuthContext
+  const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -118,7 +118,11 @@ export default function Navbar() {
                   key={item.text}
                   component={Link}
                   href={item.href}
-                  sx={{ color: "black", textTransform: "none", fontWeight: 400 }}
+                  sx={{
+                    color: "black",
+                    textTransform: "none",
+                    fontWeight: 400,
+                  }}
                 >
                   {item.text}
                 </Button>

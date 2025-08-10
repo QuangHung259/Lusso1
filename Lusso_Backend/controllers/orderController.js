@@ -2,15 +2,20 @@
 const Order = require("../models/Order");
 
 // [1] Thêm đơn hàng mới
+// [1] Thêm đơn hàng mới
 const createOrder = async (req, res) => {
   try {
-    const {
-      customerInfo,
-      products,
-      totalAmount,
-      paymentMethod,
-      cardInfo
-    } = req.body;
+    console.log("Dữ liệu nhận từ client:", req.body);
+    console.log("User từ authMiddleware:", req.user);
+    console.log(
+      "🌐 Kết nối MongoDB:",
+      Order.db?.databaseName,
+      " - URI:",
+      process.env.MONGO_URI
+    );
+
+    const { customerInfo, products, totalAmount, paymentMethod, cardInfo } =
+      req.body;
 
     // Validate customer info
     if (
@@ -22,6 +27,7 @@ const createOrder = async (req, res) => {
       !customerInfo.district ||
       !customerInfo.address
     ) {
+      console.warn("⚠️ Thiếu thông tin khách hàng:", customerInfo);
       return res.status(400).json({ message: "Thiếu thông tin khách hàng" });
     }
 
@@ -29,13 +35,17 @@ const createOrder = async (req, res) => {
     if (
       !Array.isArray(products) ||
       products.length === 0 ||
-      products.some(p => !p.product || !p.name || p.quantity <= 0 || p.price < 0)
+      products.some(
+        (p) => !p.product || !p.name || p.quantity <= 0 || p.price < 0
+      )
     ) {
+      console.warn("⚠️ Dữ liệu sản phẩm không hợp lệ:", products);
       return res.status(400).json({ message: "Dữ liệu sản phẩm không hợp lệ" });
     }
 
     // Validate totalAmount
     if (typeof totalAmount !== "number" || totalAmount < 0) {
+      console.warn("⚠️ Tổng tiền không hợp lệ:", totalAmount);
       return res.status(400).json({ message: "Tổng tiền không hợp lệ" });
     }
 
@@ -48,14 +58,15 @@ const createOrder = async (req, res) => {
       totalAmount,
       paymentMethod: paymentMethod || "cod",
       cardInfo: paymentMethod === "card" ? cardInfo : {},
-      status: "pending"
+      status: "pending",
     });
 
-    await newOrder.save();
+    const savedOrder = await newOrder.save();
+    console.log("Order đã lưu:", savedOrder);
 
     res.status(201).json({
       message: "Đơn hàng đã được tạo!",
-      order: newOrder,
+      order: savedOrder,
     });
   } catch (error) {
     console.error("LỖI KHI TẠO ĐƠN HÀNG:", error);
@@ -110,7 +121,9 @@ const updateOrderStatus = async (req, res) => {
     if (!updatedOrder)
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
 
-    res.status(200).json({ message: "Cập nhật thành công", order: updatedOrder });
+    res
+      .status(200)
+      .json({ message: "Cập nhật thành công", order: updatedOrder });
   } catch (error) {
     res.status(500).json({ message: "Lỗi khi cập nhật đơn hàng", error });
   }

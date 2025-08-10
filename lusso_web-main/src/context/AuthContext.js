@@ -1,68 +1,71 @@
+// context/AuthContext.js
 "use client";
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
 
-// ❌ Xóa dòng import { useAuth } from "@/context/AuthContext";
-
-// Tạo Context
 const AuthContext = createContext();
 
-// Custom hook để dễ sử dụng
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
 
-// Provider
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
 
-  // Hàm lấy thông tin user từ API
   const fetchUser = async () => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    const savedToken = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (savedToken) {
+      setToken(savedToken);
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+        setIsAuthenticated(true);
+      }
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API_URL}/users/profile`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${savedToken}` } }
         );
         setUser(res.data.user);
+        localStorage.setItem("user", JSON.stringify(res.data.user)); // update user
         setIsAuthenticated(true);
       } catch (err) {
         console.error("Lỗi khi lấy thông tin người dùng:", err);
         setUser(null);
         setIsAuthenticated(false);
+        setToken(null);
       }
     } else {
       setIsAuthenticated(false);
     }
   };
 
-  // Hàm đăng nhập
-  const login = (userData, token) => {
-    if (token) localStorage.setItem("token", token);
+  const login = (userData, newToken) => {
+    if (newToken) {
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
+    }
+    localStorage.setItem("user", JSON.stringify(userData));
     setIsAuthenticated(true);
     setUser(userData);
   };
 
-  // Hàm đăng xuất
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setIsAuthenticated(false);
     setUser(null);
+    setToken(null);
   };
 
-  // Lấy thông tin user khi load trang
   useEffect(() => {
     fetchUser();
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, login, logout, fetchUser }}
+      value={{ isAuthenticated, user, token, login, logout, fetchUser }}
     >
       {children}
     </AuthContext.Provider>

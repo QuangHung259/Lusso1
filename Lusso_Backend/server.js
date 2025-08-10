@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const morgan = require("morgan");
 
 // ✅ Import các route modules
 const userRoutes = require("./routes/userRoutes");
@@ -22,6 +23,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ✅ Middleware
+app.use(morgan("dev"));
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "*", // ⚡ cho phép gọi từ FE

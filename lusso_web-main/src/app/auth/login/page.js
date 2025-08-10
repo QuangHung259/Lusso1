@@ -15,7 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { useUser } from "@/context/UserContext"; // ✅ Dùng UserContext
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -23,8 +23,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // ✅ Sử dụng useUser thay vì useAuth
-  const { user, login, logout } = useUser();
+  const { login } = useAuth(); //
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -43,8 +42,11 @@ export default function LoginPage() {
       );
 
       const { token, user } = res.data;
+
+      //Lưu token và user vào context + localStorage
+      localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("token", token);
-      login(user); // ✅ gọi login từ UserContext
+      login(user, token);
 
       if (user.role === "admin") {
         router.push("/admin");
